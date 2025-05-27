@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inventory Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    label {
+      margin-right: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+    th {
+      background-color: #34495e;
+      color: white;
+    }
+    canvas {
+      margin-top: 30px;
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h2>Inventory Dashboard</h2>
+  <label>Date: <input type="date" id="selectedDate" /></label>
+  <button onclick="loadData()">Load Charts</button>
+
+  <h3>Finished Goods (Pie Chart)</h3>
+  <canvas id="finishedChart"></canvas>
+
+  <h3>Raw Material (Bar Chart)</h3>
+  <canvas id="rawChart"></canvas>
+
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>Item Code</th>
+        <th>Description</th>
+        <th>Category</th>
+        <th>Stock Level</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function loadData() {
+      const date = document.getElementById("selectedDate").value || "2025-05-27";
+      const api = `https://script.google.com/macros/s/AKfycbzPfikjcna3-B07vCXV072iEJ_cl-9RsCGrzctgkbkBEDqk3KY6MFQfczu0pCcX1wCXoA/exec?fromDate=${date}&toDate=${date}`;
+      const res = await fetch(api);
+      const data = await res.json();
+
+      const finished = [];
+      const raw = [];
+      const tableRows = [];
+
+      data.forEach(row => {
+        const qty = parseInt(row.StockData[0]) || 0;
+        const status = qty === 0 ? "Below 33%" : qty < 100 ? "33–66%" : qty > 10000 ? "Excess" : "Normal";
+
+        const item = {
+          code: row.ItemCode,
+          name: row.Description,
+          category: row.Category,
+          qty,
+          status
+        };
+
+        tableRows.push(item);
+
+        if (row.Category.includes("Raw Material")) {
+          raw.push(item);
+        } else {
+          finished.push(item);
+        }
+      });
+
+      // Populate table
+      const tbody = document.querySelector("#dataTable tbody");
+      tbody.innerHTML = "";
+      tableRows.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${item.code}</td>
+          <td>${item.name}</td>
+          <td>${item.category}</td>
+          <td>${item.qty}</td>
+          <td>${item.status}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Pie Chart for Finished Goods
+      const pieCtx = document.getElementById("finishedChart").getContext("2d");
+      if (window.finishedChart) window.finishedChart.destroy();
+      window.finishedChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+          labels: finished.map(i => i.name),
+          datasets: [{
+            data: finished.map(i => i.qty),
+            backgroundColor: finished.map((_, i) => `hsl(${i * 35}, 70%, 60%)`)
+          }]
+        }
+      });
+
+      // Bar Chart for Raw Material
+      const barCtx = document.getElementById("rawChart").getContext("2d");
+      if (window.rawChart) window.rawChart.destroy();
+      window.rawChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: raw.map(i => i.name),
+          datasets: [{
+            label: "Qty",
+            data: raw.map(i => i.qty),
+            backgroundColor: "rgba(100, 149, 237, 0.8)"
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          scales: {
+            x: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    // Load today’s data by default
+    document.addEventListener("DOMContentLoaded", loadData);
+  </script>
+</body>
+</html>

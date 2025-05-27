@@ -58,7 +58,7 @@
   <script>
     async function loadData() {
       const date = document.getElementById("selectedDate").value || "2025-05-27";
-      const api = `https://script.google.com/macros/s/AKfycbzPfikjcna3-B07vCXV072iEJ_cl-9RsCGrzctgkbkBEDqk3KY6MFQfczu0pCcX1wCXoA/exec?fromDate=${date}&toDate=${date}`;
+      const api = `https://script.google.com/macros/s/AKfycbxG0xnG3jTuTzxYC6A9f_j4O4E92FlHIYDog8oCupSPOS98-UeD3bHtPE-P3hOGo01l9w/exec?fromDate=${date}&toDate=${date}`;
       const res = await fetch(api);
       const data = await res.json();
 
